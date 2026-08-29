@@ -1,0 +1,12 @@
+@model CreateRequestViewModel
+@{
+    ViewData["Title"] = "Create blood request";
+    var hospitals = ViewBag.Hospitals as List<HospitalViewModel> ?? new List<HospitalViewModel>();
+}
+<div class="row justify-content-center"><div class="col-lg-7"><div class="card border-0 shadow-sm"><div class="card-body p-4"><h1 class="h3 mb-4">Create a blood request</h1>
+@if (ViewBag.Error is string error) { <div class="alert alert-danger">@error</div> }
+<form asp-action="Create" method="post">@Html.AntiForgeryToken()<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="mb-3"><label asp-for="HospitalId" class="form-label">Hospital</label><select asp-for="HospitalId" class="form-select"><option value="">Choose a hospital</option>@foreach (var hospital in hospitals) { <option value="@hospital.Id">@hospital.Name — @hospital.Location</option> }</select></div>
+<div class="row"><div class="col-md-6 mb-3"><label asp-for="BloodGroup" class="form-label">Blood group</label><select asp-for="BloodGroup" class="form-select"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div><div class="col-md-6 mb-3"><label asp-for="UnitsRequired" class="form-label">Units required</label><input asp-for="UnitsRequired" class="form-control" min="1" max="100" /></div></div>
+<div class="row"><div class="col-md-6 mb-3"><label asp-for="Urgency" class="form-label">Urgency</label><select asp-for="Urgency" class="form-select"><option>Normal</option><option>High</option><option>Critical</option></select></div><div class="col-md-6 mb-3"><label asp-for="RequiredDate" class="form-label">Required date</label><input asp-for="RequiredDate" type="date" class="form-control" /></div></div>
+<button class="btn btn-danger">Submit request</button> <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a></form></div></div></div></div>

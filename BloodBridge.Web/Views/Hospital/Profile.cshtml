@@ -1,0 +1,5 @@
+@model HospitalProfileViewModel
+@{
+    ViewData["Title"] = "Hospital profile";
+}
+<div class="row justify-content-center"><div class="col-lg-7"><div class="card border-0 shadow-sm"><div class="card-body p-4"><h1 class="h3 mb-4">Hospital profile</h1>@if (ViewBag.Error is string error) { <div class="alert alert-danger">@error</div> }<form asp-action="Profile" method="post">@Html.AntiForgeryToken()<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div><div class="mb-3"><label asp-for="HospitalName" class="form-label">Hospital name</label><input asp-for="HospitalName" class="form-control" /></div><div class="mb-3"><label asp-for="Location" class="form-label">Location or coordinates</label><input asp-for="Location" class="form-control" placeholder="23.2599, 77.4126" /></div><div class="mb-4"><label asp-for="ContactInfo" class="form-label">Contact information</label><input asp-for="ContactInfo" class="form-control" /></div><button class="btn btn-danger">Save changes</button></form></div></div></div></div>

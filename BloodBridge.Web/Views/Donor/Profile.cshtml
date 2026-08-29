@@ -1,0 +1,5 @@
+@model DonorViewModel
+@{
+    ViewData["Title"] = "Donor profile";
+}
+<div class="row justify-content-center"><div class="col-lg-7"><div class="card border-0 shadow-sm"><div class="card-body p-4"><h1 class="h3 mb-4">My donor profile</h1>@if (ViewBag.Error is string error) { <div class="alert alert-danger">@error</div> }<p class="text-muted">@Model.Name · @Model.BloodGroup</p><form asp-action="Profile" method="post">@Html.AntiForgeryToken()<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div><div class="mb-3"><label asp-for="Phone" class="form-label">Phone</label><input asp-for="Phone" class="form-control" /></div><div class="mb-3"><label asp-for="Location" class="form-label">Location or coordinates</label><input asp-for="Location" class="form-control" placeholder="23.2599, 77.4126" /></div><div class="form-check mb-4"><input asp-for="IsAvailable" class="form-check-input" /><label asp-for="IsAvailable" class="form-check-label">Available to donate</label></div><button class="btn btn-danger">Save changes</button></form></div></div></div></div>

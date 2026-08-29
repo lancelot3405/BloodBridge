@@ -1,0 +1,14 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Requester dashboard";
+}
+<div class="d-flex justify-content-between align-items-center mb-4"><div><h1 class="h2">Requester dashboard</h1><p class="text-muted mb-0">Track your blood requirements and donor matches.</p></div><a class="btn btn-danger" asp-action="Create">New blood request</a></div>
+@if (ViewBag.Error is string error) { <div class="alert alert-danger">@error</div> }
+<div class="card border-0 shadow-sm"><div class="card-body"><h5 class="card-title">Requests</h5><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Blood group</th><th>Hospital</th><th>Units</th><th>Urgency</th><th>Required</th><th>Status</th><th></th></tr></thead><tbody>
+@foreach (var request in Model.Requests)
+{
+    var hospital = Model.Hospitals.FirstOrDefault(item => item.Id == request.HospitalId);
+    <tr><td class="fw-semibold">@request.BloodGroup</td><td>@(hospital?.Name ?? $"Hospital #{request.HospitalId}")</td><td>@request.UnitsRequired</td><td>@request.Urgency</td><td>@request.RequiredDate.ToString("dd MMM yyyy")</td><td><span class="badge status-badge">@request.Status</span></td><td><a class="btn btn-sm btn-outline-danger" asp-action="Matches" asp-route-requestId="@request.Id">View matches</a></td></tr>
+}
+@if (Model.Requests.Count == 0) { <tr><td colspan="7" class="text-center text-muted py-4">No requests found.</td></tr> }
+</tbody></table></div></div></div>
