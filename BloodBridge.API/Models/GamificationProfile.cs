@@ -20,6 +20,12 @@ public sealed class GamificationProfile
 
     public bool ProfileCompletedXPGranted { get; set; }
 
+    public int CurrentStreak { get; set; }
+
+    public int HighestStreak { get; set; }
+
+    public DateTime LastActiveDate { get; set; }
+
     [JsonIgnore]
     public Donor Donor { get; set; } = null!;
 }

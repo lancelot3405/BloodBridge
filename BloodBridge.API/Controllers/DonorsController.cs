@@ -125,6 +125,8 @@ public class DonorsController : ControllerBase
                 cancellationToken: cancellationToken);
         }
 
+        await _gamificationService.UpdateStreakAsync(donor.Id, cancellationToken);
+
         return Ok(ToProfileResponse(donor));
     }
 

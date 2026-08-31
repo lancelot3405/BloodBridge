@@ -22,6 +22,7 @@ public class BloodBridgeDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<GamificationProfile> GamificationProfiles => Set<GamificationProfile>();
     public DbSet<GamificationActivity> GamificationActivities => Set<GamificationActivity>();
+    public DbSet<ImpactActivityLog> ImpactActivityLogs => Set<ImpactActivityLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -148,6 +149,19 @@ public class BloodBridgeDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<GamificationActivity>()
             .HasIndex(activity => new { activity.DonorId, activity.ActivityKey })
             .IsUnique();
+
+        modelBuilder.Entity<ImpactActivityLog>()
+            .HasOne(log => log.Donor)
+            .WithMany()
+            .HasForeignKey(log => log.DonorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ImpactActivityLog>()
+            .HasIndex(log => new { log.DonorId, log.EarnedAt });
+
+        modelBuilder.Entity<GamificationProfile>()
+            .Property(profile => profile.LastActiveDate)
+            .HasDefaultValue(DateTime.MinValue);
 
         modelBuilder.Entity<Donor>().HasData(
             new Donor
