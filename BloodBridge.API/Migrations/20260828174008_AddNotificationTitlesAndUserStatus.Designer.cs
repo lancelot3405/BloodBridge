@@ -4,6 +4,7 @@ using BloodBridge.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BloodBridge.API.Migrations
 {
     [DbContext(typeof(BloodBridgeDbContext))]
-    partial class BloodBridgeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260828174008_AddNotificationTitlesAndUserStatus")]
+    partial class AddNotificationTitlesAndUserStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -341,7 +344,7 @@ namespace BloodBridge.API.Migrations
                             BloodGroup = "A+",
                             IsAvailable = true,
                             LastDonationDate = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "23.2599,77.4126",
+                            Location = "Bhopal",
                             Name = "Harigovind",
                             Phone = "9876543210",
                             UserId = "00000000-0000-0000-0000-000000000001"
@@ -352,7 +355,7 @@ namespace BloodBridge.API.Migrations
                             BloodGroup = "B+",
                             IsAvailable = true,
                             LastDonationDate = new DateTime(2025, 11, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "23.2337,77.4340",
+                            Location = "Bhopal",
                             Name = "Akshay",
                             Phone = "9876543211",
                             UserId = "00000000-0000-0000-0000-000000000002"
@@ -363,7 +366,7 @@ namespace BloodBridge.API.Migrations
                             BloodGroup = "B+",
                             IsAvailable = false,
                             LastDonationDate = new DateTime(2025, 12, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "23.2156,77.4321",
+                            Location = "Bhopal",
                             Name = "Adithyan",
                             Phone = "9876543212",
                             UserId = "00000000-0000-0000-0000-000000000003"
@@ -410,7 +413,7 @@ namespace BloodBridge.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Location")
+                    b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
@@ -441,7 +444,7 @@ namespace BloodBridge.API.Migrations
                         new
                         {
                             Id = 1,
-                            Location = "23.2599,77.4126",
+                            Address = "MP Nagar, Bhopal",
                             Name = "City Care Hospital",
                             Phone = "0755-4001000",
                             UserId = "00000000-0000-0000-0000-000000000011"
@@ -449,7 +452,7 @@ namespace BloodBridge.API.Migrations
                         new
                         {
                             Id = 2,
-                            Location = "23.1990,77.3770",
+                            Address = "Arera Colony, Bhopal",
                             Name = "Bhopal Medical Center",
                             Phone = "0755-4002000",
                             UserId = "00000000-0000-0000-0000-000000000012"

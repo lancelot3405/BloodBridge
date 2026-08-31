@@ -16,6 +16,9 @@ public class Donation
     [Required]
     public int HospitalId { get; set; }
 
+    [Required, StringLength(3)]
+    public string BloodGroup { get; set; } = string.Empty;
+
     [Required]
     public DateTime DonationDate { get; set; }
 

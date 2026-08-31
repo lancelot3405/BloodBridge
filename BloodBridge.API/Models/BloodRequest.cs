@@ -10,6 +10,11 @@ public class BloodRequest
     [Required]
     public int HospitalId { get; set; }
 
+    public int? AcceptedDonorId { get; set; }
+
+    [JsonIgnore]
+    public string? RequesterId { get; set; }
+
     [Required, StringLength(3)]
     public string BloodGroup { get; set; } = string.Empty;
 
@@ -31,11 +36,12 @@ public class BloodRequest
     public Hospital? Hospital { get; set; }
 
     [JsonIgnore]
+    public Donor? AcceptedDonor { get; set; }
+
+    [JsonIgnore]
     public ICollection<DonorMatch> DonorMatches { get; set; } = new List<DonorMatch>();
 
     [JsonIgnore]
     public ICollection<Donation> Donations { get; set; } = new List<Donation>();
 
-    [JsonIgnore]
-    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }

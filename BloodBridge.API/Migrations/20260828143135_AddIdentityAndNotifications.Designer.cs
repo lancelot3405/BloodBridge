@@ -4,6 +4,7 @@ using BloodBridge.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BloodBridge.API.Migrations
 {
     [DbContext(typeof(BloodBridgeDbContext))]
-    partial class BloodBridgeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260828143135_AddIdentityAndNotifications")]
+    partial class AddIdentityAndNotifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,9 +42,6 @@ namespace BloodBridge.API.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
@@ -88,88 +88,6 @@ namespace BloodBridge.API.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "00000000-0000-0000-0000-000000000001",
-                            AccessFailedCount = 0,
-                            ConcurrencyStamp = "00000000-0000-0000-0000-000000000001",
-                            Email = "seed-donor-1@bloodbridge.local",
-                            EmailConfirmed = true,
-                            IsActive = true,
-                            LockoutEnabled = false,
-                            NormalizedEmail = "SEED-DONOR-1@BLOODBRIDGE.LOCAL",
-                            NormalizedUserName = "SEED-DONOR-1@BLOODBRIDGE.LOCAL",
-                            PhoneNumberConfirmed = false,
-                            SecurityStamp = "00000000-0000-0000-0000-000000000001",
-                            TwoFactorEnabled = false,
-                            UserName = "seed-donor-1@bloodbridge.local"
-                        },
-                        new
-                        {
-                            Id = "00000000-0000-0000-0000-000000000002",
-                            AccessFailedCount = 0,
-                            ConcurrencyStamp = "00000000-0000-0000-0000-000000000002",
-                            Email = "seed-donor-2@bloodbridge.local",
-                            EmailConfirmed = true,
-                            IsActive = true,
-                            LockoutEnabled = false,
-                            NormalizedEmail = "SEED-DONOR-2@BLOODBRIDGE.LOCAL",
-                            NormalizedUserName = "SEED-DONOR-2@BLOODBRIDGE.LOCAL",
-                            PhoneNumberConfirmed = false,
-                            SecurityStamp = "00000000-0000-0000-0000-000000000002",
-                            TwoFactorEnabled = false,
-                            UserName = "seed-donor-2@bloodbridge.local"
-                        },
-                        new
-                        {
-                            Id = "00000000-0000-0000-0000-000000000003",
-                            AccessFailedCount = 0,
-                            ConcurrencyStamp = "00000000-0000-0000-0000-000000000003",
-                            Email = "seed-donor-3@bloodbridge.local",
-                            EmailConfirmed = true,
-                            IsActive = true,
-                            LockoutEnabled = false,
-                            NormalizedEmail = "SEED-DONOR-3@BLOODBRIDGE.LOCAL",
-                            NormalizedUserName = "SEED-DONOR-3@BLOODBRIDGE.LOCAL",
-                            PhoneNumberConfirmed = false,
-                            SecurityStamp = "00000000-0000-0000-0000-000000000003",
-                            TwoFactorEnabled = false,
-                            UserName = "seed-donor-3@bloodbridge.local"
-                        },
-                        new
-                        {
-                            Id = "00000000-0000-0000-0000-000000000011",
-                            AccessFailedCount = 0,
-                            ConcurrencyStamp = "00000000-0000-0000-0000-000000000011",
-                            Email = "seed-hospital-1@bloodbridge.local",
-                            EmailConfirmed = true,
-                            IsActive = true,
-                            LockoutEnabled = false,
-                            NormalizedEmail = "SEED-HOSPITAL-1@BLOODBRIDGE.LOCAL",
-                            NormalizedUserName = "SEED-HOSPITAL-1@BLOODBRIDGE.LOCAL",
-                            PhoneNumberConfirmed = false,
-                            SecurityStamp = "00000000-0000-0000-0000-000000000011",
-                            TwoFactorEnabled = false,
-                            UserName = "seed-hospital-1@bloodbridge.local"
-                        },
-                        new
-                        {
-                            Id = "00000000-0000-0000-0000-000000000012",
-                            AccessFailedCount = 0,
-                            ConcurrencyStamp = "00000000-0000-0000-0000-000000000012",
-                            Email = "seed-hospital-2@bloodbridge.local",
-                            EmailConfirmed = true,
-                            IsActive = true,
-                            LockoutEnabled = false,
-                            NormalizedEmail = "SEED-HOSPITAL-2@BLOODBRIDGE.LOCAL",
-                            NormalizedUserName = "SEED-HOSPITAL-2@BLOODBRIDGE.LOCAL",
-                            PhoneNumberConfirmed = false,
-                            SecurityStamp = "00000000-0000-0000-0000-000000000012",
-                            TwoFactorEnabled = false,
-                            UserName = "seed-hospital-2@bloodbridge.local"
-                        });
                 });
 
             modelBuilder.Entity("BloodBridge.API.Models.BloodRequest", b =>
@@ -193,9 +111,6 @@ namespace BloodBridge.API.Migrations
 
                     b.Property<int>("HospitalId")
                         .HasColumnType("int");
-
-                    b.Property<string>("RequesterId")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("RequiredDate")
                         .HasColumnType("datetime2");
@@ -323,14 +238,10 @@ namespace BloodBridge.API.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
 
                     b.ToTable("Donors");
 
@@ -341,10 +252,9 @@ namespace BloodBridge.API.Migrations
                             BloodGroup = "A+",
                             IsAvailable = true,
                             LastDonationDate = new DateTime(2025, 10, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "23.2599,77.4126",
+                            Location = "Bhopal",
                             Name = "Harigovind",
-                            Phone = "9876543210",
-                            UserId = "00000000-0000-0000-0000-000000000001"
+                            Phone = "9876543210"
                         },
                         new
                         {
@@ -352,10 +262,9 @@ namespace BloodBridge.API.Migrations
                             BloodGroup = "B+",
                             IsAvailable = true,
                             LastDonationDate = new DateTime(2025, 11, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "23.2337,77.4340",
+                            Location = "Bhopal",
                             Name = "Akshay",
-                            Phone = "9876543211",
-                            UserId = "00000000-0000-0000-0000-000000000002"
+                            Phone = "9876543211"
                         },
                         new
                         {
@@ -363,10 +272,9 @@ namespace BloodBridge.API.Migrations
                             BloodGroup = "B+",
                             IsAvailable = false,
                             LastDonationDate = new DateTime(2025, 12, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Location = "23.2156,77.4321",
+                            Location = "Bhopal",
                             Name = "Adithyan",
-                            Phone = "9876543212",
-                            UserId = "00000000-0000-0000-0000-000000000003"
+                            Phone = "9876543212"
                         });
                 });
 
@@ -410,7 +318,7 @@ namespace BloodBridge.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Location")
+                    b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
@@ -425,15 +333,7 @@ namespace BloodBridge.API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
 
                     b.ToTable("Hospitals");
 
@@ -441,18 +341,16 @@ namespace BloodBridge.API.Migrations
                         new
                         {
                             Id = 1,
-                            Location = "23.2599,77.4126",
+                            Address = "MP Nagar, Bhopal",
                             Name = "City Care Hospital",
-                            Phone = "0755-4001000",
-                            UserId = "00000000-0000-0000-0000-000000000011"
+                            Phone = "0755-4001000"
                         },
                         new
                         {
                             Id = 2,
-                            Location = "23.1990,77.3770",
+                            Address = "Arera Colony, Bhopal",
                             Name = "Bhopal Medical Center",
-                            Phone = "0755-4002000",
-                            UserId = "00000000-0000-0000-0000-000000000012"
+                            Phone = "0755-4002000"
                         });
                 });
 
@@ -475,11 +373,6 @@ namespace BloodBridge.API.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -489,37 +382,6 @@ namespace BloodBridge.API.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Notifications");
-                });
-
-            modelBuilder.Entity("BloodBridge.API.Models.Requester", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ContactNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("Requesters");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -700,17 +562,6 @@ namespace BloodBridge.API.Migrations
                     b.Navigation("Hospital");
                 });
 
-            modelBuilder.Entity("BloodBridge.API.Models.Donor", b =>
-                {
-                    b.HasOne("BloodBridge.API.Models.ApplicationUser", "User")
-                        .WithOne("Donor")
-                        .HasForeignKey("BloodBridge.API.Models.Donor", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("BloodBridge.API.Models.DonorMatch", b =>
                 {
                     b.HasOne("BloodBridge.API.Models.BloodRequest", "BloodRequest")
@@ -730,33 +581,11 @@ namespace BloodBridge.API.Migrations
                     b.Navigation("Donor");
                 });
 
-            modelBuilder.Entity("BloodBridge.API.Models.Hospital", b =>
-                {
-                    b.HasOne("BloodBridge.API.Models.ApplicationUser", "User")
-                        .WithOne("Hospital")
-                        .HasForeignKey("BloodBridge.API.Models.Hospital", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("BloodBridge.API.Models.Notification", b =>
                 {
                     b.HasOne("BloodBridge.API.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BloodBridge.API.Models.Requester", b =>
-                {
-                    b.HasOne("BloodBridge.API.Models.ApplicationUser", "User")
-                        .WithOne("Requester")
-                        .HasForeignKey("BloodBridge.API.Models.Requester", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -812,15 +641,6 @@ namespace BloodBridge.API.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("BloodBridge.API.Models.ApplicationUser", b =>
-                {
-                    b.Navigation("Donor");
-
-                    b.Navigation("Hospital");
-
-                    b.Navigation("Requester");
                 });
 
             modelBuilder.Entity("BloodBridge.API.Models.BloodRequest", b =>

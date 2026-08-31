@@ -8,10 +8,10 @@ public class Notification
     public int Id { get; set; }
 
     [Required]
-    public int DonorId { get; set; }
+    public string UserId { get; set; } = string.Empty;
 
-    [Required]
-    public int BloodRequestId { get; set; }
+    [Required, StringLength(150)]
+    public string Title { get; set; } = string.Empty;
 
     [Required, StringLength(500)]
     public string Message { get; set; } = string.Empty;
@@ -21,8 +21,5 @@ public class Notification
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [JsonIgnore]
-    public Donor? Donor { get; set; }
-
-    [JsonIgnore]
-    public BloodRequest? BloodRequest { get; set; }
+    public ApplicationUser? User { get; set; }
 }

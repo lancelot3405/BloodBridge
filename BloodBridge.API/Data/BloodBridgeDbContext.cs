@@ -1,9 +1,10 @@
 using BloodBridge.API.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace BloodBridge.API.Data;
 
-public class BloodBridgeDbContext : DbContext
+public class BloodBridgeDbContext : IdentityDbContext<ApplicationUser>
 {
     public BloodBridgeDbContext(DbContextOptions<BloodBridgeDbContext> options)
         : base(options)
@@ -12,6 +13,7 @@ public class BloodBridgeDbContext : DbContext
 
     public DbSet<Donor> Donors => Set<Donor>();
     public DbSet<Hospital> Hospitals => Set<Hospital>();
+    public DbSet<Requester> Requesters => Set<Requester>();
     public DbSet<BloodRequest> BloodRequests => Set<BloodRequest>();
     public DbSet<DonorMatch> DonorMatches => Set<DonorMatch>();
     public DbSet<Donation> Donations => Set<Donation>();
@@ -55,17 +57,33 @@ public class BloodBridgeDbContext : DbContext
             .HasForeignKey(donation => donation.HospitalId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Notification>()
-            .HasOne(notification => notification.Donor)
-            .WithMany(donor => donor.Notifications)
-            .HasForeignKey(notification => notification.DonorId)
-            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Donor>()
+            .HasOne(donor => donor.User)
+            .WithOne(user => user.Donor)
+            .HasForeignKey<Donor>(donor => donor.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Hospital>()
+            .HasOne(hospital => hospital.User)
+            .WithOne(user => user.Hospital)
+            .HasForeignKey<Hospital>(hospital => hospital.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Requester>()
+            .HasOne(requester => requester.User)
+            .WithOne(user => user.Requester)
+            .HasForeignKey<Requester>(requester => requester.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Notification>()
-            .HasOne(notification => notification.BloodRequest)
-            .WithMany(request => request.Notifications)
-            .HasForeignKey(notification => notification.BloodRequestId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(notification => notification.User)
+            .WithMany()
+            .HasForeignKey(notification => notification.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Donor>().Property(donor => donor.UserId).HasMaxLength(450);
+        modelBuilder.Entity<Hospital>().Property(hospital => hospital.UserId).HasMaxLength(450);
+        modelBuilder.Entity<Requester>().Property(requester => requester.UserId).HasMaxLength(450);
 
         modelBuilder.Entity<BloodRequest>()
             .HasOne(request => request.Hospital)
@@ -73,34 +91,47 @@ public class BloodBridgeDbContext : DbContext
             .HasForeignKey(request => request.HospitalId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<BloodRequest>()
+            .HasOne(request => request.AcceptedDonor)
+            .WithMany()
+            .HasForeignKey(request => request.AcceptedDonorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Donation>()
+            .HasIndex(donation => new { donation.BloodRequestId, donation.DonorId })
+            .IsUnique();
+
         modelBuilder.Entity<Donor>().HasData(
             new Donor
             {
                 Id = 1,
+                UserId = SeedUserIds.Donor1,
                 Name = "Harigovind",
                 BloodGroup = "A+",
                 Phone = "9876543210",
-                Location = "Bhopal",
+                Location = "23.2599,77.4126",
                 IsAvailable = true,
                 LastDonationDate = new DateTime(2025, 10, 15)
             },
             new Donor
             {
                 Id = 2,
+                UserId = SeedUserIds.Donor2,
                 Name = "Akshay",
                 BloodGroup = "B+",
                 Phone = "9876543211",
-                Location = "Bhopal",
+                Location = "23.2337,77.4340",
                 IsAvailable = true,
                 LastDonationDate = new DateTime(2025, 11, 20)
             },
             new Donor
             {
                 Id = 3,
+                UserId = SeedUserIds.Donor3,
                 Name = "Adithyan",
                 BloodGroup = "B+",
                 Phone = "9876543212",
-                Location = "Bhopal",
+                Location = "23.2156,77.4321",
                 IsAvailable = false,
                 LastDonationDate = new DateTime(2025, 12, 5)
             });
@@ -109,15 +140,17 @@ public class BloodBridgeDbContext : DbContext
             new Hospital
             {
                 Id = 1,
+                UserId = SeedUserIds.Hospital1,
                 Name = "City Care Hospital",
-                Address = "MP Nagar, Bhopal",
+                Location = "23.2599,77.4126",
                 Phone = "0755-4001000"
             },
             new Hospital
             {
                 Id = 2,
+                UserId = SeedUserIds.Hospital2,
                 Name = "Bhopal Medical Center",
-                Address = "Arera Colony, Bhopal",
+                Location = "23.1990,77.3770",
                 Phone = "0755-4002000"
             });
 
@@ -144,5 +177,33 @@ public class BloodBridgeDbContext : DbContext
                 Status = "Pending",
                 CreatedAt = new DateTime(2026, 8, 18, 9, 0, 0, DateTimeKind.Utc)
             });
+
+        modelBuilder.Entity<ApplicationUser>().HasData(
+            SeedUser(SeedUserIds.Donor1, "seed-donor-1@bloodbridge.local"),
+            SeedUser(SeedUserIds.Donor2, "seed-donor-2@bloodbridge.local"),
+            SeedUser(SeedUserIds.Donor3, "seed-donor-3@bloodbridge.local"),
+            SeedUser(SeedUserIds.Hospital1, "seed-hospital-1@bloodbridge.local"),
+            SeedUser(SeedUserIds.Hospital2, "seed-hospital-2@bloodbridge.local"));
     }
+
+    private static ApplicationUser SeedUser(string id, string email) => new()
+    {
+        Id = id,
+        UserName = email,
+        NormalizedUserName = email.ToUpperInvariant(),
+        Email = email,
+        NormalizedEmail = email.ToUpperInvariant(),
+        EmailConfirmed = true,
+        SecurityStamp = id,
+        ConcurrencyStamp = id
+    };
+}
+
+internal static class SeedUserIds
+{
+    public const string Donor1 = "00000000-0000-0000-0000-000000000001";
+    public const string Donor2 = "00000000-0000-0000-0000-000000000002";
+    public const string Donor3 = "00000000-0000-0000-0000-000000000003";
+    public const string Hospital1 = "00000000-0000-0000-0000-000000000011";
+    public const string Hospital2 = "00000000-0000-0000-0000-000000000012";
 }
