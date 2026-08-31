@@ -1,6 +1,8 @@
 using BloodBridge.API.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace BloodBridge.API.Data;
 
@@ -18,6 +20,8 @@ public class BloodBridgeDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<DonorMatch> DonorMatches => Set<DonorMatch>();
     public DbSet<Donation> Donations => Set<Donation>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<GamificationProfile> GamificationProfiles => Set<GamificationProfile>();
+    public DbSet<GamificationActivity> GamificationActivities => Set<GamificationActivity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -99,6 +103,50 @@ public class BloodBridgeDbContext : IdentityDbContext<ApplicationUser>
 
         modelBuilder.Entity<Donation>()
             .HasIndex(donation => new { donation.BloodRequestId, donation.DonorId })
+            .IsUnique();
+
+        modelBuilder.Entity<GamificationProfile>()
+            .HasOne(profile => profile.Donor)
+            .WithOne(donor => donor.GamificationProfile)
+            .HasForeignKey<GamificationProfile>(profile => profile.DonorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<GamificationProfile>()
+            .HasIndex(profile => profile.DonorId)
+            .IsUnique();
+
+        var badgesComparer = new ValueComparer<List<string>>(
+            (left, right) => left != null && right != null && left.SequenceEqual(right),
+            value => value.Aggregate(0, (hash, badge) => HashCode.Combine(hash, badge.GetHashCode(StringComparison.Ordinal))),
+            value => value.ToList());
+
+        modelBuilder.Entity<GamificationProfile>()
+            .Property(profile => profile.BadgesEarned)
+            .HasConversion(
+                badges => JsonSerializer.Serialize(badges, (JsonSerializerOptions?)null),
+                json => JsonSerializer.Deserialize<List<string>>(json, (JsonSerializerOptions?)null) ?? new List<string>())
+            .Metadata.SetValueComparer(badgesComparer);
+
+        modelBuilder.Entity<GamificationProfile>()
+            .Property(profile => profile.ImpactScore)
+            .HasDefaultValue(0);
+
+        modelBuilder.Entity<GamificationProfile>()
+            .Property(profile => profile.TierRank)
+            .HasDefaultValue(GamificationRules.NewDonorTier);
+
+        modelBuilder.Entity<GamificationProfile>()
+            .Property(profile => profile.ProfileCompletedXPGranted)
+            .HasDefaultValue(false);
+
+        modelBuilder.Entity<GamificationActivity>()
+            .HasOne(activity => activity.Donor)
+            .WithMany()
+            .HasForeignKey(activity => activity.DonorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<GamificationActivity>()
+            .HasIndex(activity => new { activity.DonorId, activity.ActivityKey })
             .IsUnique();
 
         modelBuilder.Entity<Donor>().HasData(

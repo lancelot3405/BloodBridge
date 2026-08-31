@@ -10,15 +10,18 @@ public sealed class BloodRequestWorkflowService
     private readonly BloodBridgeDbContext _context;
     private readonly BloodCompatibilityService _compatibilityService;
     private readonly NotificationService _notificationService;
+    private readonly IGamificationService _gamificationService;
 
     public BloodRequestWorkflowService(
         BloodBridgeDbContext context,
         BloodCompatibilityService compatibilityService,
-        NotificationService notificationService)
+        NotificationService notificationService,
+        IGamificationService gamificationService)
     {
         _context = context;
         _compatibilityService = compatibilityService;
         _notificationService = notificationService;
+        _gamificationService = gamificationService;
     }
 
     public async Task<WorkflowResult> TransitionAsync(
@@ -76,6 +79,12 @@ public sealed class BloodRequestWorkflowService
                 return WorkflowResult.Invalid("The specified donor is unavailable or incompatible with this request.");
             }
 
+            if (DonorMedicalEligibility.GetEligibilityError(donor.LastDonationDate, DateTime.UtcNow)
+                is string eligibilityError)
+            {
+                return WorkflowResult.Invalid(eligibilityError);
+            }
+
             if (donorAcceptanceShortcut)
             {
                 // The donor UI can accept directly from PENDING. Record the
@@ -85,6 +94,7 @@ public sealed class BloodRequestWorkflowService
             }
 
             request.AcceptedDonorId = donor.Id;
+            await MarkDonorMatchAcceptedAsync(request.Id, donor, cancellationToken);
         }
 
         if (targetStatus == BloodRequestStatuses.Matched)
@@ -92,6 +102,7 @@ public sealed class BloodRequestWorkflowService
             await CreateMatchesAndNotificationsAsync(request, cancellationToken);
         }
 
+        Donation? completedDonation = null;
         if (targetStatus is BloodRequestStatuses.DonationCompleted or BloodRequestStatuses.Fulfilled)
         {
             if (request.AcceptedDonorId is null)
@@ -99,11 +110,39 @@ public sealed class BloodRequestWorkflowService
                 return WorkflowResult.Invalid("A donor must be accepted before recording a donation.");
             }
 
-            await EnsureDonationAsync(request, targetStatus, input.DonationDate, cancellationToken);
+            completedDonation = await EnsureDonationAsync(request, targetStatus, input.DonationDate, cancellationToken);
         }
 
         request.Status = targetStatus;
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (targetStatus == BloodRequestStatuses.DonorAccepted)
+        {
+            await _gamificationService.AwardActivityXpAsync(
+                request.AcceptedDonorId!.Value,
+                GamificationActivityTypes.RespondToRequest,
+                request.Id,
+                cancellationToken);
+
+            if (IsUrgent(request.Urgency))
+            {
+                await _gamificationService.AwardActivityXpAsync(
+                    request.AcceptedDonorId.Value,
+                    GamificationActivityTypes.UrgentRequest,
+                    request.Id,
+                    cancellationToken);
+            }
+        }
+
+        if (targetStatus == BloodRequestStatuses.DonationCompleted && completedDonation is not null)
+        {
+            await _gamificationService.AwardActivityXpAsync(
+                completedDonation.DonorId,
+                GamificationActivityTypes.SuccessfulDonation,
+                completedDonation.BloodRequestId,
+                cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
 
         return WorkflowResult.Success(request);
@@ -141,10 +180,39 @@ public sealed class BloodRequestWorkflowService
         }
     }
 
+    private async Task MarkDonorMatchAcceptedAsync(
+        int bloodRequestId,
+        Donor donor,
+        CancellationToken cancellationToken)
+    {
+        var match = _context.DonorMatches.Local
+            .FirstOrDefault(item => item.BloodRequestId == bloodRequestId && item.DonorId == donor.Id);
+
+        match ??= await _context.DonorMatches
+            .FirstOrDefaultAsync(
+                item => item.BloodRequestId == bloodRequestId && item.DonorId == donor.Id,
+                cancellationToken);
+
+        if (match is null)
+        {
+            _context.DonorMatches.Add(new DonorMatch
+            {
+                DonorId = donor.Id,
+                BloodRequestId = bloodRequestId,
+                Status = "Accepted"
+            });
+            return;
+        }
+
+        match.Status = "Accepted";
+    }
+
     public async Task<WorkflowResult> RecordDonationAsync(
         CreateDonationDto input,
         CancellationToken cancellationToken)
     {
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
         var request = await _context.BloodRequests
             .FirstOrDefaultAsync(item => item.Id == input.BloodRequestId, cancellationToken);
 
@@ -172,7 +240,6 @@ public sealed class BloodRequestWorkflowService
         }
 
         var donor = await _context.Donors
-            .AsNoTracking()
             .FirstOrDefaultAsync(item => item.Id == input.DonorId, cancellationToken);
 
         if (donor is null || !_compatibilityService.IsCompatible(request.BloodGroup, donor.BloodGroup))
@@ -192,12 +259,22 @@ public sealed class BloodRequestWorkflowService
 
         _context.Donations.Add(donation);
         request.Status = BloodRequestStatuses.DonationCompleted;
+        donor.LastDonationDate = DateTime.UtcNow;
+        donor.IsAvailable = false;
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _gamificationService.AwardActivityXpAsync(
+            donation.DonorId,
+            GamificationActivityTypes.SuccessfulDonation,
+            donation.BloodRequestId,
+            cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
 
         return WorkflowResult.Success(request, donation);
     }
 
-    private async Task EnsureDonationAsync(
+    private async Task<Donation> EnsureDonationAsync(
         BloodRequest request,
         string status,
         DateTime? donationDate,
@@ -206,9 +283,16 @@ public sealed class BloodRequestWorkflowService
         var donation = await _context.Donations
             .FirstOrDefaultAsync(item => item.BloodRequestId == request.Id && item.DonorId == request.AcceptedDonorId, cancellationToken);
 
+        var donor = await _context.Donors
+            .FirstOrDefaultAsync(item => item.Id == request.AcceptedDonorId, cancellationToken);
+        if (donor is null)
+        {
+            throw new InvalidOperationException("The accepted donor no longer exists.");
+        }
+
         if (donation is null)
         {
-            _context.Donations.Add(new Donation
+            donation = new Donation
             {
                 DonorId = request.AcceptedDonorId!.Value,
                 BloodRequestId = request.Id,
@@ -216,17 +300,29 @@ public sealed class BloodRequestWorkflowService
                 BloodGroup = request.BloodGroup,
                 DonationDate = donationDate?.ToUniversalTime() ?? DateTime.UtcNow,
                 Status = status
-            });
-
-            return;
+            };
+            _context.Donations.Add(donation);
         }
-
-        donation.Status = status;
-        if (donationDate.HasValue && status == BloodRequestStatuses.DonationCompleted)
+        else
         {
-            donation.DonationDate = donationDate.Value.ToUniversalTime();
+            donation.Status = status;
+            if (donationDate.HasValue && status == BloodRequestStatuses.DonationCompleted)
+            {
+                donation.DonationDate = donationDate.Value.ToUniversalTime();
+            }
         }
+
+        if (status == BloodRequestStatuses.DonationCompleted)
+        {
+            donor.LastDonationDate = DateTime.UtcNow;
+            donor.IsAvailable = false;
+        }
+
+        return donation;
     }
+
+    private static bool IsUrgent(string? urgency) =>
+        urgency?.Trim().ToUpperInvariant() is "URGENT" or "EMERGENCY" or "HIGH";
 }
 
 public sealed class WorkflowResult

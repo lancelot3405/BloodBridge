@@ -15,11 +15,16 @@ public class DonorsController : ControllerBase
 {
     private readonly BloodBridgeDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IGamificationService _gamificationService;
 
-    public DonorsController(BloodBridgeDbContext context, ICurrentUserService currentUser)
+    public DonorsController(
+        BloodBridgeDbContext context,
+        ICurrentUserService currentUser,
+        IGamificationService gamificationService)
     {
         _context = context;
         _currentUser = currentUser;
+        _gamificationService = gamificationService;
     }
 
     [HttpGet]
@@ -59,6 +64,9 @@ public class DonorsController : ControllerBase
 
         _context.Donors.Add(donor);
         await _context.SaveChangesAsync();
+        await _gamificationService.AwardActivityXpAsync(
+            donor.Id,
+            GamificationActivityTypes.CompleteProfile);
 
         return CreatedAtAction(nameof(GetDonor), new { id = donor.Id }, donor);
     }
@@ -98,10 +106,25 @@ public class DonorsController : ControllerBase
             return NotFound(new { message = "Donor profile not found." });
         }
 
+        var wasAvailable = donor.IsAvailable;
         donor.Phone = input.Phone.Trim();
         donor.Location = input.Location.Trim();
         donor.IsAvailable = input.IsAvailable;
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _gamificationService.AwardActivityXpAsync(
+            donor.Id,
+            GamificationActivityTypes.CompleteProfile,
+            cancellationToken: cancellationToken);
+
+        if (!wasAvailable && donor.IsAvailable)
+        {
+            await _gamificationService.AwardActivityXpAsync(
+                donor.Id,
+                GamificationActivityTypes.SetAvailability,
+                cancellationToken: cancellationToken);
+        }
+
         return Ok(ToProfileResponse(donor));
     }
 

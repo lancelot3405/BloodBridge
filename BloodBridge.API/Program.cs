@@ -76,6 +76,7 @@ builder.Services.AddScoped<AdvancedAiRankingService>();
 builder.Services.AddHttpClient("DonorRankingAi", client => client.Timeout = TimeSpan.FromSeconds(10));
 builder.Services.AddScoped<BloodRequestWorkflowService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<IGamificationService, GamificationService>();
 builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 builder.Services.AddScoped<ISmsSender, ConsoleSmsSender>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

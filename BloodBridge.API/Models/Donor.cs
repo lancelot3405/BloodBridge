@@ -44,4 +44,7 @@ public class Donor
     [JsonIgnore]
     public ICollection<Donation> Donations { get; set; } = new List<Donation>();
 
+    [JsonIgnore]
+    public GamificationProfile? GamificationProfile { get; set; }
+
 }

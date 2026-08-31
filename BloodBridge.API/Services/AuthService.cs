@@ -11,15 +11,18 @@ public sealed class AuthService
     private readonly BloodBridgeDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IGamificationService _gamificationService;
 
     public AuthService(
         BloodBridgeDbContext context,
         UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole> roleManager)
+        RoleManager<IdentityRole> roleManager,
+        IGamificationService gamificationService)
     {
         _context = context;
         _userManager = userManager;
         _roleManager = roleManager;
+        _gamificationService = gamificationService;
     }
 
     public Task<RegistrationResult> RegisterDonorAsync(RegisterDonorDto input) =>
@@ -127,6 +130,15 @@ public sealed class AuthService
             }
 
             await _context.SaveChangesAsync();
+            if (role == ApplicationRoles.Donor)
+            {
+                var donor = await _context.Donors
+                    .SingleAsync(item => item.UserId == user.Id);
+                await _gamificationService.AwardActivityXpAsync(
+                    donor.Id,
+                    GamificationActivityTypes.CompleteProfile);
+            }
+
             await transaction.CommitAsync();
             return RegistrationResult.Success(user, role);
         }
