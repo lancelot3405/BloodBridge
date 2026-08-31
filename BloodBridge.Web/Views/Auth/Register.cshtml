@@ -25,7 +25,7 @@
                     <div id="donorFields" class="role-fields">
                         <h5 class="text-danger">Donor profile</h5>
                         <div class="row"><div class="col-md-6 mb-3"><label asp-for="Name" class="form-label">Name</label><input asp-for="Name" class="form-control" /></div><div class="col-md-6 mb-3"><label asp-for="BloodGroup" class="form-label">Blood group</label><select asp-for="BloodGroup" class="form-select"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div></div>
-                        <div class="row"><div class="col-md-6 mb-3"><label asp-for="Phone" class="form-label">Phone</label><input asp-for="Phone" class="form-control" /></div><div class="col-md-6 mb-3"><label asp-for="Location" class="form-label">Location or coordinates</label><input asp-for="Location" class="form-control" placeholder="23.2599, 77.4126" /></div></div>
+                        <div class="row"><div class="col-md-6 mb-3"><label asp-for="Phone" class="form-label">Phone</label><input asp-for="Phone" class="form-control" /></div><div class="col-md-6 mb-3"><label asp-for="Location" class="form-label">Location or coordinates</label><div class="input-group"><input asp-for="Location" id="donorLocation" class="form-control" placeholder="Click Get My Location" readonly /><button type="button" class="btn btn-outline-danger" onclick="getMyLocation('donorLocation', 'donorLocationStatus', this)">📍 Get My Location</button></div><div id="donorLocationStatus" class="form-text" aria-live="polite">Your browser will ask for location permission.</div></div></div>
                         <div class="form-check mb-3"><input asp-for="IsAvailable" class="form-check-input" /><label asp-for="IsAvailable" class="form-check-label">I am currently available to donate</label></div>
                     </div>
                     <div id="requesterFields" class="role-fields d-none">
@@ -36,7 +36,7 @@
                     <div id="hospitalFields" class="role-fields d-none">
                         <h5 class="text-danger">Hospital profile</h5>
                         <div class="mb-3"><label asp-for="HospitalName" class="form-label">Hospital name</label><input asp-for="HospitalName" class="form-control" /></div>
-                        <div class="mb-3"><label asp-for="Location" class="form-label">Location or coordinates</label><input asp-for="Location" class="form-control" placeholder="23.2599, 77.4126" /></div>
+                        <div class="mb-3"><label asp-for="Location" class="form-label">Location or coordinates</label><div class="input-group"><input asp-for="Location" id="hospitalLocation" class="form-control" placeholder="Click Get My Location" readonly /><button type="button" class="btn btn-outline-danger" onclick="getMyLocation('hospitalLocation', 'hospitalLocationStatus', this)">📍 Get My Location</button></div><div id="hospitalLocationStatus" class="form-text" aria-live="polite">Your browser will ask for location permission.</div></div>
                         <div class="mb-3"><label asp-for="ContactInfo" class="form-label">Contact information</label><input asp-for="ContactInfo" class="form-control" /></div>
                     </div>
                     <button class="btn btn-danger">Create account</button>
@@ -49,7 +49,40 @@
     <script>
         const select = document.getElementById('roleSelect');
         const fields = { Donor: document.getElementById('donorFields'), Requester: document.getElementById('requesterFields'), Hospital: document.getElementById('hospitalFields') };
+        // Show only the fields for the selected account role before the form is submitted.
         function showRole() { Object.entries(fields).forEach(([role, x]) => { const active = role === select.value; x.classList.toggle('d-none', !active); x.querySelectorAll('input,select').forEach(input => input.disabled = !active); }); }
+
+        // Use the browser's free HTML5 location feature instead of a paid maps API for this student project.
+        function getMyLocation(inputId, statusId, button) {
+            const locationInput = document.getElementById(inputId);
+            const statusText = document.getElementById(statusId);
+
+            if (!navigator.geolocation) {
+                statusText.textContent = 'Location is not supported by this browser.';
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = 'Locating...';
+            statusText.textContent = 'Requesting your location permission...';
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    const latitude = position.coords.latitude.toFixed(4);
+                    const longitude = position.coords.longitude.toFixed(4);
+                    locationInput.value = `${latitude}, ${longitude}`;
+                    statusText.textContent = 'Location added successfully.';
+                    button.disabled = false;
+                    button.textContent = '📍 Get My Location';
+                },
+                function () {
+                    statusText.textContent = 'Location permission was denied or unavailable.';
+                    button.disabled = false;
+                    button.textContent = '📍 Get My Location';
+                }
+            );
+        }
+
         select.addEventListener('change', showRole); showRole();
     </script>
 }

@@ -30,6 +30,11 @@ builder.Services.AddHttpClient<ApiClient>(client =>
         client.Timeout = TimeSpan.FromSeconds(30);
     })
     .AddHttpMessageHandler<JwtDelegatingHandler>();
+builder.Services.AddHttpClient("InventoryPrediction", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+builder.Services.AddScoped<InventoryPredictionService>();
 
 var app = builder.Build();
 

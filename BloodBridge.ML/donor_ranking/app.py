@@ -1,12 +1,21 @@
 """FastAPI service that ranks medically-eligible donors for BloodBridge."""
 
 from pathlib import Path
+import sys
 from typing import List
 
 import joblib
 import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
+
+
+# Add the ML root so the donor-ranking app can import its sibling inventory package.
+ML_ROOT = Path(__file__).resolve().parent.parent
+if str(ML_ROOT) not in sys.path:
+    sys.path.insert(0, str(ML_ROOT))
+
+from inventory_prediction.forecast_router import router as inventory_router
 
 
 MODEL_PATH = Path(__file__).parent / "donor_model.pkl"
@@ -46,6 +55,7 @@ class RankedDonor(BaseModel):
 
 app = FastAPI(title="BloodBridge Donor Ranking Service")
 model = load_model()
+app.include_router(inventory_router)
 
 
 # Build a short explanation from donor facts so the model result is easier for a student to present.

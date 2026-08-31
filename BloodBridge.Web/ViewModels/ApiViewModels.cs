@@ -151,6 +151,23 @@ public sealed class HospitalDashboardViewModel
 {
     public HospitalProfileViewModel? Profile { get; set; }
     public IReadOnlyList<BloodRequestViewModel> Requests { get; set; } = [];
+    public InventoryDashboardViewModel Inventory { get; set; } = new();
+}
+
+public sealed class InventoryForecastViewModel
+{
+    public DateTime Date { get; set; }
+    public string BloodGroup { get; set; } = string.Empty;
+    public double PredictedDemand { get; set; }
+    public int VirtualInventory { get; set; }
+    public bool HighShortageRisk { get; set; }
+}
+
+public sealed class InventoryDashboardViewModel
+{
+    public IReadOnlyList<InventoryForecastViewModel> Forecasts { get; set; } = [];
+    public string? Error { get; set; }
+    public string VirtualInventoryNote { get; set; } = string.Empty;
 }
 
 public sealed class AdminStatsViewModel

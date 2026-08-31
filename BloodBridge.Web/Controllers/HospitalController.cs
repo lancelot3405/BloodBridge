@@ -9,10 +9,14 @@ namespace BloodBridge.Web.Controllers;
 public sealed class HospitalController : Controller
 {
     private readonly ApiClient _apiClient;
+    private readonly InventoryPredictionService _inventoryPredictionService;
 
-    public HospitalController(ApiClient apiClient)
+    public HospitalController(
+        ApiClient apiClient,
+        InventoryPredictionService inventoryPredictionService)
     {
         _apiClient = apiClient;
+        _inventoryPredictionService = inventoryPredictionService;
     }
 
     [HttpGet]
@@ -22,10 +26,12 @@ public sealed class HospitalController : Controller
         {
             var profile = await _apiClient.GetAsync<HospitalProfileViewModel>("api/hospitals/me", cancellationToken);
             var requests = await _apiClient.GetAsync<List<BloodRequestViewModel>>("api/bloodrequests", cancellationToken);
+            var inventory = await _inventoryPredictionService.GetDashboardAsync(cancellationToken);
             return View(new HospitalDashboardViewModel
             {
                 Profile = profile,
-                Requests = requests.Where(request => request.HospitalId == profile.Id).ToList()
+                Requests = requests.Where(request => request.HospitalId == profile.Id).ToList(),
+                Inventory = inventory
             });
         }
         catch (ApiException exception)

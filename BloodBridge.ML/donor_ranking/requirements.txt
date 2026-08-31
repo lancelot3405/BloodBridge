@@ -16,3 +16,6 @@ joblib
 
 # Pydantic validates the JSON received by FastAPI.
 pydantic
+
+# XGBoost trains the Phase 3 inventory-demand forecasting model.
+xgboost
