@@ -1,0 +1,18 @@
+# FastAPI hosts the small ranking API.
+fastapi
+
+# Uvicorn runs the FastAPI application locally.
+uvicorn
+
+# Pandas and NumPy create and prepare the student-friendly dataset.
+pandas
+numpy
+
+# Scikit-learn provides the Random Forest model and evaluation metrics.
+scikit-learn
+
+# Joblib saves and loads the trained Random Forest model.
+joblib
+
+# Pydantic validates the JSON received by FastAPI.
+pydantic

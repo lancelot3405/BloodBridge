@@ -102,7 +102,49 @@ public sealed class DashboardViewModel
 public sealed class DonorDashboardViewModel
 {
     public DonorViewModel? Profile { get; set; }
+    public GamificationProfileViewModel? Gamification { get; set; }
     public IReadOnlyList<BloodRequestViewModel> Requests { get; set; } = [];
+}
+
+public sealed class GamificationProfileViewModel
+{
+    public int DonorId { get; set; }
+    public int ImpactScore { get; set; }
+    public string TierRank { get; set; } = string.Empty;
+    public int? NextRankTarget { get; set; }
+    public string? NextTierRank { get; set; }
+    public IReadOnlyCollection<string> BadgesEarned { get; set; } = [];
+    public bool IsMedicallyEligible { get; set; }
+    public DateTime? LastDonationDate { get; set; }
+    public DateTime? NextSafeDonationDate { get; set; }
+    public int CurrentStreak { get; set; }
+    public int HighestStreak { get; set; }
+    public DateTime LastActiveDate { get; set; }
+}
+
+public sealed class ImpactActivityLogViewModel
+{
+    public int Id { get; set; }
+    public string ActivityName { get; set; } = string.Empty;
+    public int PointsEarned { get; set; }
+    public DateTime EarnedAt { get; set; }
+}
+
+public sealed class SeasonalLeaderboardEntryViewModel
+{
+    public int Rank { get; set; }
+    public int DonorId { get; set; }
+    public string DisplayName { get; set; } = string.Empty;
+    public int SeasonalScore { get; set; }
+    public string TierRank { get; set; } = string.Empty;
+}
+
+public sealed class GamificationDashboardViewModel
+{
+    public GamificationProfileViewModel Profile { get; set; } = new();
+    public IReadOnlyList<ImpactActivityLogViewModel> History { get; set; } = [];
+    public IReadOnlyList<SeasonalLeaderboardEntryViewModel> Leaderboard { get; set; } = [];
+    public string SeasonLabel { get; set; } = string.Empty;
 }
 
 public sealed class HospitalDashboardViewModel

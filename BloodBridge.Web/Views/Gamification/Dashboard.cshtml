@@ -1,0 +1,250 @@
+@model GamificationDashboardViewModel
+@{
+    ViewData["Title"] = "My Impact";
+    var profile = Model.Profile;
+    var target = profile.NextRankTarget ?? profile.ImpactScore;
+    var progress = profile.NextRankTarget is null || target <= 0
+        ? 100
+        : Math.Clamp((int)Math.Round(profile.ImpactScore * 100d / target), 0, 100);
+    var scoreToNext = profile.NextRankTarget.HasValue
+        ? Math.Max(0, profile.NextRankTarget.Value - profile.ImpactScore)
+        : 0;
+}
+
+<style>
+    .impact-page { --impact-red: #dc3545; --impact-dark: #251827; }
+    .impact-hero {
+        background: radial-gradient(circle at 85% 10%, rgba(255,255,255,.24), transparent 32%), linear-gradient(135deg, #321b3d 0%, #8e1f3d 58%, #dc3545 100%);
+        color: white;
+        overflow: hidden;
+        position: relative;
+    }
+    .impact-hero::after {
+        content: "";
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        border: 28px solid rgba(255,255,255,.08);
+        border-radius: 50%;
+        right: -70px;
+        bottom: -90px;
+    }
+    .impact-icon {
+        align-items: center;
+        background: rgba(255,255,255,.16);
+        border: 1px solid rgba(255,255,255,.3);
+        border-radius: 1.25rem;
+        display: flex;
+        font-size: 2.25rem;
+        height: 76px;
+        justify-content: center;
+        width: 76px;
+    }
+    .impact-score { font-size: clamp(2.4rem, 7vw, 4.7rem); font-weight: 800; letter-spacing: -.06em; }
+    .impact-progress { background: rgba(255,255,255,.2); height: 12px; }
+    .impact-progress .progress-bar { background: #ffd166; }
+    .impact-panel { border: 0; box-shadow: 0 .65rem 1.5rem rgba(37,24,39,.08); }
+    .streak-panel { background: linear-gradient(135deg, #fff7df, #fff); border-left: 5px solid #f59f00; }
+    .streak-number { color: #f08c00; font-size: 3rem; font-weight: 800; line-height: 1; }
+    .badge-orb { align-items: center; background: #fff1f2; border: 1px solid #ffd1d6; border-radius: 1rem; display: flex; gap: .6rem; min-height: 58px; padding: .65rem .8rem; }
+    .badge-orb-icon { align-items: center; background: #dc3545; border-radius: 50%; color: white; display: flex; height: 34px; justify-content: center; width: 34px; }
+    .timeline { border-left: 2px solid #f2d6db; margin-left: .75rem; padding-left: 1.5rem; }
+    .timeline-item { position: relative; }
+    .timeline-item::before { background: #dc3545; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 0 2px #f2d6db; content: ""; height: 13px; left: -1.95rem; position: absolute; top: .35rem; width: 13px; }
+    .leader-row { align-items: center; border-bottom: 1px solid #f1eef2; display: flex; gap: .75rem; padding: .8rem 0; }
+    .leader-row:last-child { border-bottom: 0; }
+    .leader-rank { color: #8e1f3d; font-size: 1.1rem; font-weight: 800; width: 30px; }
+    .leader-avatar { align-items: center; background: #f8e4e8; border-radius: 50%; color: #8e1f3d; display: flex; font-weight: 700; height: 38px; justify-content: center; width: 38px; }
+    .safety-lock { background: #f8fafc; border: 1px solid #dbe4ee; }
+    .section-kicker { color: #8e1f3d; font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+</style>
+
+<div class="impact-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="section-kicker">Personal milestones</div>
+            <h1 class="display-6 fw-bold mb-1">My Impact</h1>
+            <p class="text-muted mb-0">Every safe action helps build a stronger donor community.</p>
+        </div>
+        <a asp-controller="Donor" asp-action="Index" class="btn btn-outline-danger">Back to dashboard</a>
+    </div>
+
+    <div class="impact-hero impact-panel rounded-4 p-4 p-lg-5 mb-4">
+        <div class="row align-items-center g-4 position-relative" style="z-index: 1;">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="impact-icon" aria-hidden="true">🩸</div>
+                    <div>
+                        <div class="small text-white-50">Current tier</div>
+                        <h2 class="h1 fw-bold mb-0">@profile.TierRank</h2>
+                    </div>
+                </div>
+                <div class="impact-score">@profile.ImpactScore <span class="fs-4 fw-semibold">XP</span></div>
+                <div class="d-flex justify-content-between small text-white-50 mb-2">
+                    <span>Responsible Impact Score</span>
+                    @if (profile.NextRankTarget.HasValue)
+                    {
+                        <span>@scoreToNext XP to @profile.NextTierRank</span>
+                    }
+                    else
+                    {
+                        <span>Highest tier reached</span>
+                    }
+                </div>
+                <div class="progress impact-progress rounded-pill" role="progressbar" aria-label="Progress to next tier" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar rounded-pill" style="width: @progress%"></div>
+                </div>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <div class="small text-white-50">Highest personal score</div>
+                <div class="h2 fw-bold">@profile.ImpactScore XP</div>
+                <div class="small text-white-50">Your progress is personal, not a global race.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card impact-panel streak-panel h-100 rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="section-kicker">Consistency</div>
+                            <h3 class="h4 fw-bold mt-1">Your streak</h3>
+                        </div>
+                        <span class="fs-2" aria-hidden="true">🔥</span>
+                    </div>
+                    <div class="streak-number mt-3">@profile.CurrentStreak</div>
+                    <div class="fw-bold">Day streak</div>
+                    <p class="text-muted small mt-2 mb-0">Highest streak: @profile.HighestStreak days</p>
+                    <p class="small text-muted mt-3 mb-0">Streaks reward safe app engagement such as checking in and keeping availability current. They never reward donating more often.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card impact-panel safety-lock h-100 rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <div class="section-kicker">Medical safeguard</div>
+                            <h3 class="h4 fw-bold mt-1">Donation eligibility</h3>
+                        </div>
+                        @if (profile.IsMedicallyEligible)
+                        {
+                            <span class="badge text-bg-success rounded-pill px-3 py-2">Eligible</span>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-warning rounded-pill px-3 py-2">Cooldown active</span>
+                        }
+                    </div>
+                    @if (profile.IsMedicallyEligible)
+                    {
+                        <p class="text-success fw-semibold mt-4 mb-2">You can accept a request under the 90-day safety lock.</p>
+                        <p class="text-muted small mb-0">Please follow the guidance of qualified medical professionals before donating.</p>
+                    }
+                    else if (profile.NextSafeDonationDate.HasValue)
+                    {
+                        <p class="text-warning-emphasis fw-semibold mt-4 mb-2">Wait until @profile.NextSafeDonationDate.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</p>
+                        <p class="text-muted small mb-0">The backend will continue to block acceptance until the safety window ends.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card impact-panel rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <div class="section-kicker">Your journey</div>
+                            <h3 class="h4 fw-bold mb-0">XP activity</h3>
+                        </div>
+                        <span class="badge rounded-pill text-bg-light">Latest @Model.History.Count</span>
+                    </div>
+                    @if (Model.History.Count == 0)
+                    {
+                        <div class="text-center text-muted py-5">Your first responsible activity will appear here.</div>
+                    }
+                    else
+                    {
+                        <div class="timeline">
+                            @foreach (var activity in Model.History)
+                            {
+                                <div class="timeline-item pb-4">
+                                    <div class="d-flex justify-content-between gap-3">
+                                        <div>
+                                            <div class="fw-semibold">@activity.ActivityName</div>
+                                            <div class="small text-muted">@activity.EarnedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</div>
+                                        </div>
+                                        <span class="fw-bold text-success">+@activity.PointsEarned XP</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card impact-panel rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="section-kicker">Community snapshot</div>
+                    <h3 class="h4 fw-bold mb-1">@Model.SeasonLabel Community Heroes</h3>
+                    <p class="small text-muted mb-3">Seasonal XP earned during this month only.</p>
+                    @if (Model.Leaderboard.Count == 0)
+                    {
+                        <div class="text-center text-muted py-5">No seasonal activity yet.</div>
+                    }
+                    else
+                    {
+                        @foreach (var entry in Model.Leaderboard)
+                        {
+                            <div class="leader-row">
+                                <div class="leader-rank">@entry.Rank</div>
+                                <div class="leader-avatar">@entry.DisplayName[0]</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">@entry.DisplayName</div>
+                                    <div class="small text-muted">@entry.TierRank</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-danger">@entry.SeasonalScore XP</div>
+                                    <div class="small text-muted">this season</div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    <div class="small text-muted mt-3">Names are intentionally masked to protect donor privacy.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card impact-panel rounded-4 mt-4">
+        <div class="card-body p-4">
+            <div class="section-kicker">Milestones</div>
+            <h3 class="h4 fw-bold mb-3">Unlocked badges</h3>
+            @if (profile.BadgesEarned.Count == 0)
+            {
+                <span class="text-muted">Complete safe, meaningful activities to unlock badges.</span>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var badge in profile.BadgesEarned)
+                    {
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="badge-orb">
+                                <span class="badge-orb-icon" aria-hidden="true">★</span>
+                                <span class="fw-semibold">@badge</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

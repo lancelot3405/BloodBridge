@@ -71,7 +71,8 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<BloodCompatibilityService>();
 builder.Services.AddSingleton<GeographicService>();
-builder.Services.AddScoped<IDonorRankingService, StandardRankingService>();
+// The ML adapter falls back to the V1 distance ranking when Python is unavailable.
+builder.Services.AddScoped<IDonorRankingService, AdvancedAiRankingService>();
 builder.Services.AddScoped<AdvancedAiRankingService>();
 builder.Services.AddHttpClient("DonorRankingAi", client => client.Timeout = TimeSpan.FromSeconds(10));
 builder.Services.AddScoped<BloodRequestWorkflowService>();

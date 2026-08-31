@@ -22,11 +22,28 @@ public sealed class DonorController : Controller
         {
             var profile = await _apiClient.GetAsync<DonorViewModel>("api/donors/me", cancellationToken);
             var requests = await _apiClient.GetAsync<List<BloodRequestViewModel>>("api/bloodrequests", cancellationToken);
+            GamificationProfileViewModel? gamification = null;
+            try
+            {
+                gamification = await _apiClient.GetAsync<GamificationProfileViewModel>(
+                    "api/gamification/me",
+                    cancellationToken);
+            }
+            catch (ApiException exception)
+            {
+                ViewBag.GamificationError = exception.Message;
+            }
+
             requests = requests
                 .Where(request => request.Status.Equals("PENDING", StringComparison.OrdinalIgnoreCase)
                     && CanDonate(profile.BloodGroup, request.BloodGroup))
                 .ToList();
-            return View(new DonorDashboardViewModel { Profile = profile, Requests = requests });
+            return View(new DonorDashboardViewModel
+            {
+                Profile = profile,
+                Gamification = gamification,
+                Requests = requests
+            });
         }
         catch (ApiException exception)
         {
@@ -89,6 +106,37 @@ public sealed class DonorController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Impact(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var now = DateTime.UtcNow;
+            var profile = await _apiClient.GetAsync<GamificationProfileViewModel>(
+                "api/gamification/me",
+                cancellationToken);
+            var history = await _apiClient.GetAsync<List<ImpactActivityLogViewModel>>(
+                "api/gamification/history?limit=50",
+                cancellationToken);
+            var leaderboard = await _apiClient.GetAsync<List<SeasonalLeaderboardEntryViewModel>>(
+                $"api/gamification/leaderboard?year={now.Year}&month={now.Month}",
+                cancellationToken);
+
+            return View("~/Views/Gamification/Dashboard.cshtml", new GamificationDashboardViewModel
+            {
+                Profile = profile,
+                History = history,
+                Leaderboard = leaderboard,
+                SeasonLabel = now.ToString("MMMM yyyy")
+            });
+        }
+        catch (ApiException exception)
+        {
+            TempData["Error"] = exception.Message;
+            return RedirectToAction(nameof(Index));
+        }
     }
 
     private static bool CanDonate(string donorBloodGroup, string requestedBloodGroup) =>

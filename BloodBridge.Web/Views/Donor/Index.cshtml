@@ -1,8 +1,164 @@
 @model DonorDashboardViewModel
 @{
     ViewData["Title"] = "Donor dashboard";
+    var impact = Model.Gamification;
+    var nextTarget = impact?.NextRankTarget ?? impact?.ImpactScore ?? 0;
+    var progress = impact is null || nextTarget <= 0
+        ? 100
+        : Math.Clamp((int)Math.Round(impact.ImpactScore * 100d / nextTarget), 0, 100);
 }
-<div class="d-flex justify-content-between align-items-center mb-4"><div><h1 class="h2">Donor dashboard</h1><p class="text-muted mb-0">Help patients by keeping your availability up to date.</p></div><a class="btn btn-outline-danger" asp-action="Profile">Manage profile</a></div>
-@if (ViewBag.Error is string error) { <div class="alert alert-danger">@error</div> }
-@if (Model.Profile is not null) { <div class="card border-0 shadow-sm mb-4"><div class="card-body d-flex flex-wrap justify-content-between align-items-center"><div><h5 class="mb-1">Welcome, @Model.Profile.Name</h5><span>@Model.Profile.BloodGroup · @Model.Profile.Location</span></div><span class="badge @(Model.Profile.IsAvailable ? "bg-success" : "bg-secondary")">@(Model.Profile.IsAvailable ? "Available" : "Unavailable")</span></div></div> }
-<div class="card border-0 shadow-sm"><div class="card-body"><h5>Incoming compatible requests</h5><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Blood group</th><th>Urgency</th><th>Units</th><th>Required date</th><th></th></tr></thead><tbody>@foreach (var request in Model.Requests) { <tr><td>@request.BloodGroup</td><td>@request.Urgency</td><td>@request.UnitsRequired</td><td>@request.RequiredDate.ToString("dd MMM yyyy")</td><td><form asp-action="Accept" method="post"><input type="hidden" name="requestId" value="@request.Id" /><input type="hidden" name="donorId" value="@Model.Profile?.Id" />@Html.AntiForgeryToken()<button class="btn btn-sm btn-danger">Accept request</button></form></td></tr> } @if (Model.Requests.Count == 0) { <tr><td colspan="5" class="text-center text-muted py-4">No matching pending requests right now.</td></tr> }</tbody></table></div></div></div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2">Donor dashboard</h1>
+        <p class="text-muted mb-0">Help patients by keeping your availability up to date.</p>
+    </div>
+    <a class="btn btn-outline-danger" asp-action="Profile">Manage profile</a>
+</div>
+
+@if (ViewBag.Error is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+@if (ViewBag.GamificationError is string gamificationError)
+{
+    <div class="alert alert-warning">My Impact is temporarily unavailable: @gamificationError</div>
+}
+
+@if (Model.Profile is not null)
+{
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1">Welcome, @Model.Profile.Name</h5>
+                <span>@Model.Profile.BloodGroup · @Model.Profile.Location</span>
+            </div>
+            <span class="badge @(Model.Profile.IsAvailable ? "bg-success" : "bg-secondary")">
+                @(Model.Profile.IsAvailable ? "Available" : "Unavailable")
+            </span>
+        </div>
+    </div>
+}
+
+@if (impact is not null)
+{
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <h5 class="mb-1">My Impact</h5>
+                    <p class="text-muted mb-0">Personal milestones for responsible participation.</p>
+                </div>
+                <div class="text-end">
+                    <div class="display-6 fw-bold text-danger">@impact.ImpactScore XP</div>
+                    <div class="text-muted">@impact.TierRank</div>
+                </div>
+            </div>
+
+            <div class="progress mt-3" role="progressbar" aria-label="Impact score progress" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-danger" style="width: @progress%"></div>
+            </div>
+            <div class="small text-muted mt-2">
+                @if (impact.NextRankTarget.HasValue && impact.NextTierRank is not null)
+                {
+                    <span>@(impact.NextRankTarget.Value - impact.ImpactScore) XP to @impact.NextTierRank</span>
+                }
+                else
+                {
+                    <span>Highest tier reached</span>
+                }
+            </div>
+
+            <div class="mt-3">
+                <h6>Unlocked badges</h6>
+                @if (impact.BadgesEarned.Count == 0)
+                {
+                    <span class="text-muted">Complete responsible activities to unlock personal milestones.</span>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var badge in impact.BadgesEarned)
+                        {
+                            <span class="badge rounded-pill bg-light text-dark border">@badge</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h5>Donation safety</h5>
+            @if (impact.IsMedicallyEligible)
+            {
+                <div class="text-success">Eligible to accept a donation request under the 90-day system safety lock.</div>
+            }
+            else if (impact.NextSafeDonationDate.HasValue)
+            {
+                <div class="text-warning">
+                    <div>Donation cooldown active. The next safe donation date is @impact.NextSafeDonationDate.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt").</div>
+                    <div id="donation-countdown" data-next-safe="@impact.NextSafeDonationDate.Value.ToUniversalTime().ToString("O")" class="small mt-1"></div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h5>Incoming compatible requests</h5>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr><th>Blood group</th><th>Urgency</th><th>Units</th><th>Required date</th><th></th></tr>
+                </thead>
+                <tbody>
+                @foreach (var request in Model.Requests)
+                {
+                    <tr>
+                        <td>@request.BloodGroup</td>
+                        <td>@request.Urgency</td>
+                        <td>@request.UnitsRequired</td>
+                        <td>@request.RequiredDate.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <form asp-action="Accept" method="post">
+                                <input type="hidden" name="requestId" value="@request.Id" />
+                                <input type="hidden" name="donorId" value="@Model.Profile?.Id" />
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-danger" @(impact?.IsMedicallyEligible == false ? "disabled" : null)>Accept request</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (Model.Requests.Count == 0)
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">No matching pending requests right now.</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        const element = document.getElementById("donation-countdown");
+        if (!element) return;
+        const nextSafe = new Date(element.dataset.nextSafe);
+        const update = () => {
+            const remaining = nextSafe.getTime() - Date.now();
+            if (remaining <= 0) {
+                element.textContent = "The cooldown has ended. Refresh this page to check eligibility.";
+                return;
+            }
+            const days = Math.floor(remaining / 86400000);
+            const hours = Math.floor((remaining % 86400000) / 3600000);
+            const minutes = Math.floor((remaining % 3600000) / 60000);
+            element.textContent = `Time remaining: ${days}d ${hours}h ${minutes}m`;
+        };
+        update();
+        window.setInterval(update, 60000);
+    })();
+</script>

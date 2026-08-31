@@ -24,6 +24,7 @@
                     @if (User.IsInRole("Donor"))
                     {
                         <li class="nav-item"><a class="nav-link" asp-controller="Donor" asp-action="Index">Donor Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Donor" asp-action="Impact">My Impact</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Donor" asp-action="Profile">My Profile</a></li>
                     }
                     @if (User.IsInRole("Hospital"))
